@@ -21,12 +21,30 @@ function Update-UserLicense {
     }
     # Perform action based on the switch
     if ($action -eq 'Add') {
-        $params.AddLicenses = $AddSkus
+        foreach ($sku in $AddSkus) {
+            $params.AddLicenses += @{
+                SkuId = $sku
+            }
+        }
     } elseif ($action -eq 'Remove') {
-        $params.RemoveLicenses = $RemoveSkus
+        # Remove licenses from the parameter set
+        foreach ($sku in $RemoveSkus) {
+            $params.RemoveLicenses += @{
+                SkuId = $sku
+            }
+        }
     } elseif ($action -eq 'Update') {
-        $params.AddLicenses = $AddSkus
-        $params.RemoveLicenses = $RemoveSkus
+        # Update licenses in the parameter set
+        foreach ($sku in $AddSkus) {
+            $params.AddLicenses += @{
+                SkuId = $sku
+            }
+        }
+        foreach ($sku in $RemoveSkus) {
+            $params.RemoveLicenses += @{
+                SkuId = $sku
+            }
+        }
     }
     # Check if the user exists
     try {
