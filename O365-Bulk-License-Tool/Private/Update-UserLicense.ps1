@@ -11,7 +11,6 @@ function Update-UserLicense {
         [string[]]$RemoveSkus,
         [Parameter(Mandatory = $false)]
         [switch]$Backup
-
     )
     # Build Parameter Set
     $params = @{
@@ -51,21 +50,29 @@ function Update-UserLicense {
         Get-MgUser -UserId $UserPrincipalName -ErrorAction Stop
     } catch {
         Write-Error "User $UserPrincipalName not found."
-        return
+        return $false
     }
     # Backup the current licenses if requested
     if ($Backup) {
         $currentLicenses = Get-MgUserLicenseDetail -UserId $UserPrincipalName
-        # Save to tmp file
-        $backupFile = "$env:TEMP\$UserPrincipalName-Licenses-Backup.json"
-        $currentLicenses | ConvertTo-Json | Out-File -FilePath $backupFile -Force
-        Write-Host "Backup of current licenses saved for $userPrincipalName"
+        # Check if the backup array is initialized
+        if (-not $script:backupArray) {
+            $script:backupArray = @()
+        }
+        # Add the current licenses to the backup array
+        $script:backupArray += [PSCustomObject]@{
+            UserPrincipalName = $UserPrincipalName
+            Licenses          = $currentLicenses
+        }
+        Write-Host "Backup created for $UserPrincipalName"
     }
     # Update the licenses
     try {
         Set-MgUserLicense @params
         Write-Host "Licenses updated for $UserPrincipalName"
+        return $true
     } catch {
         Write-Error "Failed to update licenses for $($UserPrincipalName): $_"
+        retrun $false
     }
 }
